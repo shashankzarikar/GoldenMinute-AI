@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoldenMinute AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>GoldenMinute AI</h1>
+        <p>Emergency Response System for Rural India</p>
+    </header>
+    <main class="chat-container">
+        <div id="chat-box" class="chat-box">
+            <div class="message system-msg">
+                <p>Welcome to the GoldenMinute AI portal. Describe your emergency below.</p>
+            </div>
+        </div>
+        <div class="input-area">
+            <form id="chat-form">
+                <input type="text" id="user-input" placeholder="Type your emergency here..." required autocomplete="off">
+                <button type="submit">Send</button>
+            </form>
+        </div>
+    </main>
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</body>
+</html>

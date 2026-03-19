@@ -1,0 +1,5 @@
+flask
+groq
+firebase-admin
+python-dotenv
+requests
