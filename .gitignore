@@ -135,6 +135,9 @@ celerybeat.pid
 *.sage.py
 
 # Environments
+# Firebase service account key (NEVER push this)
+firebase-key.json
+
 .env
 .envrc
 .venv
