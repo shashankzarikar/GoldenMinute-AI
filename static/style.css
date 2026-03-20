@@ -123,3 +123,48 @@ header p {
     font-size: 0.9rem;
     display: none;
 }
+
+.volunteer-alert {
+    border: 2px solid #e74c3c;
+    background-color: #fdecea;
+    color: #7f1d1d;
+    align-self: stretch;
+    max-width: 100%;
+    animation: volunteer-pulse 1.6s ease-in-out infinite;
+}
+
+.volunteer-title {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.volunteer-line {
+    display: flex;
+    gap: 0.35rem;
+    margin-bottom: 0.3rem;
+}
+
+.volunteer-label {
+    font-weight: 600;
+}
+
+.volunteer-name {
+    font-weight: 800;
+}
+
+.volunteer-footer {
+    margin-top: 0.5rem;
+    font-weight: 700;
+}
+
+@keyframes volunteer-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.45);
+    }
+    70% {
+        box-shadow: 0 0 0 12px rgba(231, 76, 60, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(231, 76, 60, 0);
+    }
+}

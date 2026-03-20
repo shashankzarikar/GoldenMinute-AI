@@ -96,13 +96,41 @@ def index():
 # ROUTE: AI Chat — Handles emergency messages
 # ============================================================
 
+EMERGENCY_KEYWORDS = [
+    "gir gaye",
+    "accident",
+    "heart",
+    "breathe",
+    "help",
+    "emergency",
+    "unconscious",
+    "dard",
+    "khoon",
+    "attack"
+]
+
+
+def parse_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def is_emergency_message(message):
+    lowered = (message or "").lower()
+    return any(keyword in lowered for keyword in EMERGENCY_KEYWORDS)
+
 @app.route('/api/chat', methods=['POST'])
 def chat():
     # This route only accepts POST requests (data sent from the frontend).
     # The frontend sends a JSON body like: {"message": "someone is choking"}
 
-    data = request.json                        # Parse the JSON body from the request
+    data = request.json or {}                   # Parse the JSON body from the request
     user_message = data.get('message', '')      # Extract the 'message' field; default to empty string if missing
+    user_lat = parse_float(data.get('lat'))     # User latitude if provided by the frontend
+    user_lng = parse_float(data.get('lng'))     # User longitude if provided by the frontend
+    emergency_detected = is_emergency_message(user_message)
 
     if not user_message:
         return jsonify({'error': 'No message provided'}), 400
@@ -140,8 +168,21 @@ def chat():
         ai_reply = chat_completion.choices[0].message.content
         # ^ The API returns a list of choices. We take the first choice's message content.
 
-        return jsonify({'reply': ai_reply})
-        # ^ Send the AI's response back to the frontend as JSON: {"reply": "..."}
+        response_payload = {'reply': ai_reply, 'emergency': emergency_detected}
+
+        if emergency_detected:
+            if user_lat is None or user_lng is None:
+                response_payload['volunteer_error'] = 'Location missing. Unable to find a volunteer.'
+            else:
+                nearest_volunteer, volunteer_error, _ = find_nearest_volunteer(user_lat, user_lng)
+
+                if nearest_volunteer:
+                    response_payload['volunteer'] = nearest_volunteer
+                else:
+                    response_payload['volunteer_error'] = volunteer_error
+
+        return jsonify(response_payload)
+        # ^ Send the AI's response back to the frontend as JSON.
 
     except Exception as e:
         print(f"Error calling Groq API: {e}")
@@ -154,10 +195,10 @@ def chat():
 
 @app.route('/api/seed-volunteers', methods=['GET', 'POST'])
 def seed_volunteers():
-    # This route creates 5 fake volunteer records in Firebase Realtime Database.
+    # This route creates 9 fake volunteer records in Firebase Realtime Database.
     # It's meant for TESTING purposes — so you can verify the database works.
 
-    # A list of 5 volunteer dictionaries, each with different Pune locations.
+    # A list of 9 volunteer dictionaries, with Pune and Nanded locations.
     volunteers = [
         {
             "name": "Rahul Sharma",          # Volunteer's full name
@@ -197,6 +238,38 @@ def seed_volunteers():
             "lat": 18.4872,                   # Kothrud area, Pune
             "lng": 73.8072,
             "skill": "Emergency Transport",
+            "status": "available"
+        },
+        {
+            "name": "Amit Deshmukh",
+            "phone": "9823456701",
+            "lat": 19.1350,                   # Nanded area (near city center)
+            "lng": 77.3180,
+            "skill": "CPR Trained",
+            "status": "available"
+        },
+        {
+            "name": "Priya Kulkarni",
+            "phone": "9823456702",
+            "lat": 19.1400,                   # Nanded area (near city center)
+            "lng": 77.3250,
+            "skill": "First Aid Expert",
+            "status": "available"
+        },
+        {
+            "name": "Rahul Patil",
+            "phone": "9823456703",
+            "lat": 19.1320,                   # Nanded area (near city center)
+            "lng": 77.3150,
+            "skill": "Snake Bite Treatment",
+            "status": "available"
+        },
+        {
+            "name": "Shashank Zarikar",
+            "phone": "your_phone_number",
+            "lat": 19.18450476340424,         # Nanded area (near city center)
+            "lng": 77.30401996683295,
+            "skill": "First Responder",
             "status": "available"
         }
     ]
@@ -275,22 +348,9 @@ def haversine(lat1, lng1, lat2, lng2):
 # ROUTE: Find Nearest Volunteer — Uses Haversine to find closest
 # ============================================================
 
-@app.route('/api/find-volunteer', methods=['GET', 'POST'])
-def find_volunteer():
-    # This route accepts the user's GPS coordinates and returns
-    # the nearest AVAILABLE volunteer from Firebase.
-
-    if request.method == 'GET':
-        user_lat = request.args.get('lat', type=float)
-        user_lng = request.args.get('lng', type=float)
-    else:
-        data = request.json or {}              # Parse the JSON body from the request
-        user_lat = data.get('lat')             # User's latitude  (e.g., 18.52)
-        user_lng = data.get('lng')             # User's longitude (e.g., 73.85)
-
+def find_nearest_volunteer(user_lat, user_lng):
     if user_lat is None or user_lng is None:
-        return jsonify({'error': 'Please provide both lat and lng'}), 400
-        # ^ If the frontend forgot to send coordinates, return a 400 error.
+        return None, 'Please provide both lat and lng', 400
 
     try:
         ref = db.reference('volunteers')
@@ -301,7 +361,7 @@ def find_volunteer():
         #   The structure looks like: { "-NxYz123abc": { "name": "Rahul", ... }, ... }
 
         if not all_volunteers:
-            return jsonify({'error': 'No volunteers found in database'}), 404
+            return None, 'No volunteers found in database', 404
             # ^ 404 = Not Found. The database is empty — no volunteers have been seeded yet.
 
         nearest = None                     # Will hold the closest volunteer's data
@@ -330,26 +390,54 @@ def find_volunteer():
                 # ^ If this volunteer is closer than any we've seen before,
                 #   update min_distance to this new shorter distance.
 
+                distance_display = f"{distance:.2f}"
+                # ^ Format distance as a string so small values like 0.0 show as "0.00".
+
+                if distance < 0.1:
+                    distance_display = "0.0"
+                    # ^ Show "0.0" for extremely close distances instead of a tiny decimal.
+
                 nearest = {
                     'id': vol_id,                           # The Firebase unique key
                     'name': vol_data['name'],               # Volunteer's name
                     'phone': vol_data['phone'],             # Volunteer's phone number
                     'skill': vol_data['skill'],             # Their emergency skill
-                    'distance_km': round(distance, 2),      # Distance rounded to 2 decimal places
+                    'distance_km': distance_display,         # Distance formatted for display
                     'lat': vol_data['lat'],                 # Volunteer's latitude
                     'lng': vol_data['lng']                   # Volunteer's longitude
                 }
                 # ^ Build a clean response dictionary with only the info we need.
 
         if nearest:
-            return jsonify({'volunteer': nearest})
-            # ^ Return the closest volunteer as JSON.
+            return nearest, None, 200
+            # ^ Return the closest volunteer.
         else:
-            return jsonify({'error': 'No available volunteers found'}), 404
+            return None, 'No available volunteers found', 404
 
     except Exception as e:
         print(f"Error finding volunteer: {e}")
-        return jsonify({'error': f'Failed to find volunteer: {str(e)}'}), 500
+        return None, f'Failed to find volunteer: {str(e)}', 500
+
+@app.route('/api/find-volunteer', methods=['GET', 'POST'])
+def find_volunteer():
+    # This route accepts the user's GPS coordinates and returns
+    # the nearest AVAILABLE volunteer from Firebase.
+
+    if request.method == 'GET':
+        user_lat = request.args.get('lat', type=float)
+        user_lng = request.args.get('lng', type=float)
+    else:
+        data = request.json or {}              # Parse the JSON body from the request
+        user_lat = parse_float(data.get('lat'))
+        user_lng = parse_float(data.get('lng'))
+
+    nearest, error_message, status_code = find_nearest_volunteer(user_lat, user_lng)
+
+    if nearest:
+        return jsonify({'volunteer': nearest})
+        # ^ Return the closest volunteer as JSON.
+    else:
+        return jsonify({'error': error_message}), status_code
 
 # ============================================================
 # START THE SERVER
