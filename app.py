@@ -68,11 +68,14 @@ RISK_TERMS = [
 ]
 
 
+
 def parse_float(value):
     try:
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
 
 
 def score_emergency(message):
@@ -112,7 +115,8 @@ def chat():
             "You are GoldenMinute AI, an emergency response assistant for rural India. "
             "Your goal is to provide immediate, actionable, and culturally relevant first-aid "
             "and emergency advice. Keep your responses concise, clear, and easy to understand. "
-            "If the situation is critical, advise them to seek immediate medical help while providing interim steps."
+            "If the situation is critical, advise them to seek immediate medical help while providing interim steps. "
+            "Reply in the same language as the user's message."
         )
 
         chat_completion = groq_client.chat.completions.create(
