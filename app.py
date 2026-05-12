@@ -231,11 +231,27 @@ def seed_volunteers():
     try:
         ref = db.reference('volunteers')
 
+        existing = ref.get() or {}
+        existing_phones = {
+            vol.get('phone')
+            for vol in existing.values()
+            if isinstance(vol, dict) and vol.get('phone')
+        }
+
+        added = 0
+        skipped = 0
+
         for volunteer in volunteers:
+            if volunteer.get('phone') in existing_phones:
+                skipped += 1
+                continue
+
             ref.push(volunteer)
+            existing_phones.add(volunteer.get('phone'))
+            added += 1
 
         return jsonify({
-            'message': f'Successfully added {len(volunteers)} volunteers to Firebase!'
+            'message': f'Seeded volunteers. Added: {added}, skipped: {skipped}.'
         })
 
     except Exception as e:
