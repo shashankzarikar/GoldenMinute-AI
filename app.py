@@ -332,5 +332,33 @@ def find_volunteer():
     else:
         return jsonify({'error': error_message}), status_code
 
+
+@app.route('/api/cleanup-volunteers', methods=['POST'])
+def cleanup_volunteers():
+    # Removes duplicate volunteers by phone number.
+    try:
+        ref = db.reference('volunteers')
+        all_volunteers = ref.get() or {}
+
+        seen_phones = set()
+        removed = 0
+
+        for vol_id, vol_data in all_volunteers.items():
+            phone = None
+            if isinstance(vol_data, dict):
+                phone = vol_data.get('phone')
+
+            if not phone or phone in seen_phones:
+                ref.child(vol_id).delete()
+                removed += 1
+                continue
+
+            seen_phones.add(phone)
+
+        return jsonify({'message': f'Removed {removed} duplicate volunteers.'})
+    except Exception as e:
+        print(f"Error cleaning volunteers: {e}")
+        return jsonify({'error': f'Failed to clean volunteers: {str(e)}'}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
