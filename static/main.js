@@ -53,6 +53,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function requestVolunteerInfo(location) {
+        const response = await fetch('/api/find-volunteer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ lat: location.lat, lng: location.lng })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.volunteer) {
+            appendVolunteerInfo(data.volunteer);
+        } else {
+            appendMessage(data.error || 'Unable to find a volunteer right now.', 'system-msg');
+        }
+    }
+
     chatForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const messageText = userInput.value.trim();
@@ -110,6 +128,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (data.emergency && locationData) {
                     await requestVolunteer(locationData);
+                } else if (!data.emergency && locationData && !data.casual) {
+                    await requestVolunteerInfo(locationData);
                 }
             } else {
                 appendMessage(data.error || 'An error occurred while connecting to the AI.', 'system-msg');
@@ -182,6 +202,42 @@ document.addEventListener('DOMContentLoaded', () => {
         alertDiv.appendChild(footer);
 
         chatBox.appendChild(alertDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function appendVolunteerInfo(volunteer) {
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'message volunteer-info';
+
+        const title = document.createElement('div');
+        title.className = 'volunteer-title';
+        title.textContent = 'Nearest Volunteer Contact';
+        infoDiv.appendChild(title);
+
+        const addLine = (label, value, valueClass) => {
+            const line = document.createElement('div');
+            line.className = 'volunteer-line';
+
+            const labelSpan = document.createElement('span');
+            labelSpan.className = 'volunteer-label';
+            labelSpan.textContent = `${label} `;
+
+            const valueSpan = document.createElement('span');
+            if (valueClass) {
+                valueSpan.className = valueClass;
+            }
+            valueSpan.textContent = value;
+
+            line.appendChild(labelSpan);
+            line.appendChild(valueSpan);
+            infoDiv.appendChild(line);
+        };
+
+        addLine('Name:', volunteer.name, 'volunteer-name');
+        addLine('Phone:', volunteer.phone);
+        addLine('Distance:', `${volunteer.distance_km} km`);
+
+        chatBox.appendChild(infoDiv);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 

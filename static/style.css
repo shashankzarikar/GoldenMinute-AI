@@ -170,6 +170,14 @@ header p {
     animation: volunteer-pulse 1.6s ease-in-out infinite;
 }
 
+.volunteer-info {
+    border: 1px solid #c7d2fe;
+    background-color: #eef2ff;
+    color: #1e3a8a;
+    align-self: stretch;
+    max-width: 100%;
+}
+
 .volunteer-title {
     font-weight: bold;
     margin-bottom: 0.5rem;

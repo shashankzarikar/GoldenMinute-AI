@@ -67,6 +67,21 @@ RISK_TERMS = [
     "choking"
 ]
 
+CASUAL_TERMS = [
+    "hi",
+    "hello",
+    "hey",
+    "how are you",
+    "good morning",
+    "good evening",
+    "thanks",
+    "thank you",
+    "ok",
+    "okay",
+    "test",
+    "ping"
+]
+
 
 
 def parse_float(value):
@@ -93,6 +108,14 @@ def score_emergency(message):
     is_emergency = score >= 3
     return is_emergency, score
 
+
+def is_casual_message(message):
+    text = (message or "").lower().strip()
+    if not text:
+        return False
+
+    return any(term in text for term in CASUAL_TERMS)
+
 @app.route('/api/chat', methods=['POST'])
 def chat():
     # Main chat endpoint: returns AI reply and emergency classification.
@@ -101,6 +124,7 @@ def chat():
     user_lat = parse_float(data.get('lat'))
     user_lng = parse_float(data.get('lng'))
     emergency_detected, emergency_score = score_emergency(user_message)
+    casual_detected = is_casual_message(user_message)
 
     if not user_message:
         return jsonify({'error': 'No message provided'}), 400
@@ -134,7 +158,8 @@ def chat():
         response_payload = {
             'reply': ai_reply,
             'emergency': emergency_detected,
-            'emergency_score': emergency_score
+            'emergency_score': emergency_score,
+            'casual': casual_detected
         }
 
         if emergency_detected:
