@@ -61,6 +61,27 @@ header p {
     white-space: pre-wrap; /* Preserve line breaks and spaces */
 }
 
+.status-badge {
+    align-self: flex-start;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0.3rem 0.6rem;
+    border-radius: 999px;
+    letter-spacing: 0.3px;
+}
+
+.status-emergency {
+    background-color: #fdecea;
+    color: #b42318;
+    border: 1px solid #f5b5b0;
+}
+
+.status-non-emergency {
+    background-color: #ecfdf3;
+    color: #027a48;
+    border: 1px solid #abefc6;
+}
+
 .message p {
     margin: 0;
 }

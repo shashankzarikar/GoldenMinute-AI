@@ -104,6 +104,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (chatResponse.ok) {
                 appendMessage(data.reply, 'ai-msg');
 
+                if (typeof data.emergency === 'boolean') {
+                    appendStatusBadge(data.emergency);
+                }
+
                 if (data.emergency && locationData) {
                     await requestVolunteer(locationData);
                 }
@@ -128,6 +132,14 @@ document.addEventListener('DOMContentLoaded', () => {
         chatBox.appendChild(messageDiv);
         
         // Auto-scroll to bottom
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function appendStatusBadge(isEmergency) {
+        const badge = document.createElement('div');
+        badge.className = `status-badge ${isEmergency ? 'status-emergency' : 'status-non-emergency'}`;
+        badge.textContent = isEmergency ? 'Emergency' : 'Non-emergency';
+        chatBox.appendChild(badge);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
