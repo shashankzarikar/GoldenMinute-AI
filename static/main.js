@@ -2,6 +2,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatForm = document.getElementById('chat-form');
     const userInput = document.getElementById('user-input');
     const chatBox = document.getElementById('chat-box');
+    const mapContainer = document.getElementById('map-container');
+    let leafletMap = null;
+    let userMarker = null;
+    let volunteerMarker = null;
+    let connectionLine = null;
 
     function getUserLocation() {
         return new Promise((resolve, reject) => {
@@ -42,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (response.ok && data.volunteer) {
             appendVolunteerAlert(data.volunteer);
+            showVolunteerMap(location, data.volunteer);
         } else {
             appendMessage(data.error || 'Unable to find a volunteer right now.', 'system-msg');
         }
@@ -89,11 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(chatPayload)
             });
 
-            const volunteerRequest = locationData
-                ? requestVolunteer(locationData)
-                : Promise.resolve();
-
-            const [chatResponse] = await Promise.all([chatRequest, volunteerRequest]);
+            const chatResponse = await chatRequest;
             const data = await chatResponse.json();
 
             // Remove loading indicator
@@ -101,6 +103,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (chatResponse.ok) {
                 appendMessage(data.reply, 'ai-msg');
+
+                if (data.emergency && locationData) {
+                    await requestVolunteer(locationData);
+                }
             } else {
                 appendMessage(data.error || 'An error occurred while connecting to the AI.', 'system-msg');
             }
@@ -165,5 +171,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
         chatBox.appendChild(alertDiv);
         chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function showVolunteerMap(userLocation, volunteer) {
+        if (!mapContainer) {
+            return;
+        }
+
+        mapContainer.style.display = 'block';
+
+        if (!leafletMap) {
+            leafletMap = L.map('map');
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(leafletMap);
+        }
+
+        const userLatLng = [userLocation.lat, userLocation.lng];
+        const volunteerLatLng = [volunteer.lat, volunteer.lng];
+
+        if (userMarker) {
+            userMarker.setLatLng(userLatLng);
+        } else {
+            userMarker = L.marker(userLatLng).addTo(leafletMap).bindPopup('You are here');
+        }
+
+        const volunteerPopup = `${volunteer.name} (${volunteer.phone})`;
+
+        if (volunteerMarker) {
+            volunteerMarker.setLatLng(volunteerLatLng).bindPopup(volunteerPopup);
+        } else {
+            volunteerMarker = L.circleMarker(volunteerLatLng, {
+                color: '#e74c3c',
+                fillColor: '#e74c3c',
+                fillOpacity: 0.9,
+                radius: 8
+            }).addTo(leafletMap).bindPopup(volunteerPopup);
+        }
+
+        if (connectionLine) {
+            connectionLine.setLatLngs([userLatLng, volunteerLatLng]);
+        } else {
+            connectionLine = L.polyline([userLatLng, volunteerLatLng], {
+                color: '#e74c3c',
+                weight: 3
+            }).addTo(leafletMap);
+        }
+
+        const bounds = L.latLngBounds([userLatLng, volunteerLatLng]);
+        leafletMap.fitBounds(bounds, { padding: [40, 40] });
+        leafletMap.invalidateSize();
     }
 });
