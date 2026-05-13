@@ -16,6 +16,7 @@
     <header>
         <h1>GoldenMinute AI</h1>
         <p>Emergency Response System for Rural India</p>
+        <a class="header-link" href="/volunteer">Volunteer Registration</a>
     </header>
     <main class="chat-container">
         <div id="chat-box" class="chat-box">
@@ -37,19 +38,6 @@
     <div id="map-container">
         <div id="map"></div>
     </div>
-    <section class="volunteer-registration">
-        <h2>Volunteer Registration</h2>
-        <form id="volunteer-form">
-            <input type="text" id="vol-name" placeholder="Full name" required>
-            <input type="text" id="vol-phone" placeholder="Phone number" required>
-            <input type="email" id="vol-email" placeholder="Email" required>
-            <input type="text" id="vol-skill" placeholder="Skill (e.g., CPR)" required>
-            <input type="text" id="vol-lat" placeholder="Latitude" required>
-            <input type="text" id="vol-lng" placeholder="Longitude" required>
-            <button type="submit">Register</button>
-        </form>
-        <div id="volunteer-message" class="system-msg"></div>
-    </section>
     <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>

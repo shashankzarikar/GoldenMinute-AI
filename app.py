@@ -36,6 +36,11 @@ else:
 def index():
     return render_template('index.html')
 
+
+@app.route('/volunteer')
+def volunteer_page():
+    return render_template('volunteer.html')
+
 SEVERE_TERMS = [
     "unconscious",
     "not breathing",

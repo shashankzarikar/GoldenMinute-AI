@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volunteer Registration - GoldenMinute AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>GoldenMinute AI</h1>
+        <p>Volunteer Registration</p>
+        <a class="header-link" href="/">Back to Emergency Chat</a>
+    </header>
+    <section class="volunteer-registration standalone">
+        <h2>Register as a Volunteer</h2>
+        <form id="volunteer-form">
+            <input type="text" id="vol-name" placeholder="Full name" required>
+            <input type="text" id="vol-phone" placeholder="Phone number" required>
+            <input type="email" id="vol-email" placeholder="Email" required>
+            <input type="text" id="vol-skill" placeholder="Skill (e.g., CPR)" required>
+            <input type="text" id="vol-lat" placeholder="Latitude" required>
+            <input type="text" id="vol-lng" placeholder="Longitude" required>
+            <button type="submit">Register</button>
+        </form>
+        <div id="volunteer-message" class="system-msg"></div>
+    </section>
+    <script src="{{ url_for('static', filename='volunteer.js') }}"></script>
+</body>
+</html>
