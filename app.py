@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from groq import Groq
 import firebase_admin
 from firebase_admin import credentials, db
+import smtplib
+from email.message import EmailMessage
 
 # Config
 load_dotenv()
@@ -109,6 +111,55 @@ def score_emergency(message):
     return is_emergency, score
 
 
+def get_smtp_config():
+    host = os.getenv('SMTP_HOST')
+    port = os.getenv('SMTP_PORT')
+    username = os.getenv('SMTP_USERNAME')
+    password = os.getenv('SMTP_PASSWORD')
+    sender = os.getenv('SMTP_SENDER')
+
+    if not all([host, port, username, password, sender]):
+        return None
+
+    try:
+        port = int(port)
+    except ValueError:
+        return None
+
+    return {
+        'host': host,
+        'port': port,
+        'username': username,
+        'password': password,
+        'sender': sender
+    }
+
+
+def send_alert_email(to_email, subject, body):
+    config = get_smtp_config()
+    if not config:
+        return False, 'SMTP not configured'
+
+    if not to_email:
+        return False, 'Volunteer email missing'
+
+    try:
+        message = EmailMessage()
+        message['From'] = config['sender']
+        message['To'] = to_email
+        message['Subject'] = subject
+        message.set_content(body)
+
+        with smtplib.SMTP(config['host'], config['port']) as server:
+            server.starttls()
+            server.login(config['username'], config['password'])
+            server.send_message(message)
+
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
+
 def is_casual_message(message):
     text = (message or "").lower().strip()
     if not text:
@@ -123,6 +174,8 @@ def chat():
     user_message = data.get('message', '')
     user_lat = parse_float(data.get('lat'))
     user_lng = parse_float(data.get('lng'))
+    victim_phone = (data.get('victim_phone') or '').strip()
+    victim_address = (data.get('victim_address') or '').strip()
     emergency_detected, emergency_score = score_emergency(user_message)
     casual_detected = is_casual_message(user_message)
 
@@ -170,6 +223,23 @@ def chat():
 
                 if nearest_volunteer:
                     response_payload['volunteer'] = nearest_volunteer
+
+                    subject = 'GoldenMinute Emergency Alert'
+                    body_lines = [
+                        'Emergency reported via GoldenMinute AI.',
+                        f"Summary: {user_message}",
+                        f"Location: {user_lat}, {user_lng}",
+                    ]
+
+                    if victim_phone:
+                        body_lines.append(f"Victim phone: {victim_phone}")
+                    if victim_address:
+                        body_lines.append(f"Victim address: {victim_address}")
+
+                    body = "\n".join(body_lines)
+                    sent, error = send_alert_email(nearest_volunteer.get('email'), subject, body)
+                    if not sent:
+                        response_payload['alert_error'] = error
                 else:
                     response_payload['volunteer_error'] = volunteer_error
 
@@ -287,6 +357,36 @@ def seed_volunteers():
         print(f"Error seeding volunteers: {e}")
         return jsonify({'error': f'Failed to seed volunteers: {str(e)}'}), 500
 
+
+@app.route('/api/register-volunteer', methods=['POST'])
+def register_volunteer():
+    data = request.json or {}
+    name = (data.get('name') or '').strip()
+    phone = (data.get('phone') or '').strip()
+    email = (data.get('email') or '').strip()
+    skill = (data.get('skill') or '').strip()
+    lat = parse_float(data.get('lat'))
+    lng = parse_float(data.get('lng'))
+
+    if not all([name, phone, email, skill]) or lat is None or lng is None:
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    try:
+        ref = db.reference('volunteers')
+        ref.push({
+            'name': name,
+            'phone': phone,
+            'email': email,
+            'skill': skill,
+            'lat': lat,
+            'lng': lng,
+            'status': 'available'
+        })
+        return jsonify({'message': 'Volunteer registered successfully'}), 201
+    except Exception as e:
+        print(f"Error registering volunteer: {e}")
+        return jsonify({'error': f'Failed to register volunteer: {str(e)}'}), 500
+
 def haversine(lat1, lng1, lat2, lng2):
     """Return distance in km using the Haversine formula."""
     R = 6371
@@ -329,6 +429,7 @@ def find_nearest_volunteer(user_lat, user_lng):
                     'id': vol_id,
                     'name': vol_data['name'],
                     'phone': vol_data['phone'],
+                    'email': vol_data.get('email'),
                     'skill': vol_data['skill'],
                     'distance_km': distance_display,
                     'lat': vol_data['lat'],

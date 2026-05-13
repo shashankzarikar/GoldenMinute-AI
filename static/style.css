@@ -113,6 +113,20 @@ header p {
     gap: 0.5rem;
 }
 
+.victim-details {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.victim-details input {
+    flex: 1;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
 .input-area input {
     flex: 1;
     padding: 1rem;
@@ -159,6 +173,68 @@ header p {
 #map {
     width: 100%;
     height: 100%;
+}
+
+.volunteer-registration {
+    max-width: 800px;
+    width: 100%;
+    margin: 1.5rem auto 2rem;
+    padding: 1rem;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.volunteer-registration h2 {
+    margin-top: 0;
+}
+
+#volunteer-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+#volunteer-form input {
+    padding: 0.7rem 0.9rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+#volunteer-form button {
+    grid-column: span 2;
+    padding: 0.9rem 1.4rem;
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+#volunteer-form button:hover {
+    background-color: #1f2a38;
+}
+
+#volunteer-message {
+    margin-top: 0.75rem;
+    text-align: center;
+}
+
+@media (max-width: 700px) {
+    .victim-details {
+        flex-direction: column;
+    }
+
+    #volunteer-form {
+        grid-template-columns: 1fr;
+    }
+
+    #volunteer-form button {
+        grid-column: span 1;
+    }
 }
 
 .volunteer-alert {
