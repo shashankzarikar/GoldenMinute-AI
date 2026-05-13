@@ -236,6 +236,11 @@ def chat():
                         f"Location: {user_lat}, {user_lng}",
                     ]
 
+                    maps_query = f"https://www.google.com/maps?q={user_lat},{user_lng}"
+                    maps_directions = f"https://www.google.com/maps/dir/?api=1&destination={user_lat},{user_lng}"
+                    body_lines.append(f"View on Maps: {maps_query}")
+                    body_lines.append(f"Directions: {maps_directions}")
+
                     if victim_phone:
                         body_lines.append(f"Victim phone: {victim_phone}")
                     if victim_address:

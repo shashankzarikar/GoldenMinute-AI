@@ -135,6 +135,12 @@ header p {
     font-size: 0.95rem;
 }
 
+.privacy-note {
+    margin: 0 0 0.75rem;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
 .input-area input {
     flex: 1;
     padding: 1rem;
