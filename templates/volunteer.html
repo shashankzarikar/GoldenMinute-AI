@@ -21,8 +21,10 @@
             <input type="text" id="vol-skill" placeholder="Skill (e.g., CPR)" required>
             <input type="text" id="vol-lat" placeholder="Latitude" required>
             <input type="text" id="vol-lng" placeholder="Longitude" required>
+            <button type="button" id="use-location">Use my current location</button>
             <button type="submit">Register</button>
         </form>
+        <div id="location-message" class="system-msg"></div>
         <div id="volunteer-message" class="system-msg"></div>
     </section>
     <script src="{{ url_for('static', filename='volunteer.js') }}"></script>

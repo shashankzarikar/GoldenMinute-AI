@@ -226,11 +226,24 @@ header p {
     cursor: pointer;
 }
 
+#use-location {
+    background-color: #2563eb;
+}
+
+#use-location:hover {
+    background-color: #1d4ed8;
+}
+
 #volunteer-form button:hover {
     background-color: #1f2a38;
 }
 
 #volunteer-message {
+    margin-top: 0.75rem;
+    text-align: center;
+}
+
+#location-message {
     margin-top: 0.75rem;
     text-align: center;
 }
